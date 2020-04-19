@@ -53,11 +53,12 @@ macro(ncnn_add_layer class)
 
         # look for arch specific implementation and append source
         # optimized implementation for armv7, aarch64 or x86
-        if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|aarch64)")
-            set(arch arm)
-        elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(mips)")
-            set(arch mips)
-        endif()
+        # [TODO] disable arm and mips first
+        # if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|aarch64)")
+        #     set(arch arm)
+        # elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(mips)")
+        #     set(arch mips)
+        # endif()
 
         set(LAYER_ARCH_SRC ${CMAKE_CURRENT_SOURCE_DIR}/layer/${arch}/${name}_${arch}.cpp)
         if(EXISTS ${LAYER_ARCH_SRC})
