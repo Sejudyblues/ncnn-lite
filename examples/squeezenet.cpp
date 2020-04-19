@@ -20,32 +20,25 @@
 
 #include "platform.h"
 #include "net.h"
-#if NCNN_VULKAN
-#include "gpu.h"
-#endif // NCNN_VULKAN
 
 static int detect_squeezenet(const cv::Mat& bgr, std::vector<float>& cls_scores)
 {
-    ncnn::Net squeezenet;
-
-#if NCNN_VULKAN
-    squeezenet.opt.use_vulkan_compute = true;
-#endif // NCNN_VULKAN
+    Net squeezenet;
 
     // the ncnn model https://github.com/nihui/ncnn-assets/tree/master/models
     squeezenet.load_param("squeezenet_v1.1.param");
     squeezenet.load_model("squeezenet_v1.1.bin");
 
-    ncnn::Mat in = ncnn::Mat::from_pixels_resize(bgr.data, ncnn::Mat::PIXEL_BGR, bgr.cols, bgr.rows, 227, 227);
+    Mat in = Mat::from_pixels_resize(bgr.data, Mat::PIXEL_BGR, bgr.cols, bgr.rows, 227, 227);
 
     const float mean_vals[3] = {104.f, 117.f, 123.f};
     in.substract_mean_normalize(mean_vals, 0);
 
-    ncnn::Extractor ex = squeezenet.create_extractor();
+    Extractor ex = create_extractor(&squeezenet);
 
     ex.input("data", in);
 
-    ncnn::Mat out;
+    Mat out;
     ex.extract("prob", out);
 
     cls_scores.resize(out.w);
@@ -99,16 +92,8 @@ int main(int argc, char** argv)
         return -1;
     }
 
-#if NCNN_VULKAN
-    ncnn::create_gpu_instance();
-#endif // NCNN_VULKAN
-
     std::vector<float> cls_scores;
     detect_squeezenet(m, cls_scores);
-
-#if NCNN_VULKAN
-    ncnn::destroy_gpu_instance();
-#endif // NCNN_VULKAN
 
     print_topk(cls_scores, 3);
 

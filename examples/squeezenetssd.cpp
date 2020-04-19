@@ -20,9 +20,6 @@
 
 #include "platform.h"
 #include "net.h"
-#if NCNN_VULKAN
-#include "gpu.h"
-#endif // NCNN_VULKAN
 
 struct Object
 {
@@ -33,11 +30,7 @@ struct Object
 
 static int detect_squeezenet(const cv::Mat& bgr, std::vector<Object>& objects)
 {
-    ncnn::Net squeezenet;
-
-#if NCNN_VULKAN
-    squeezenet.opt.use_vulkan_compute = true;
-#endif // NCNN_VULKAN
+    Net squeezenet;
 
     // original pretrained model from https://github.com/chuanqi305/SqueezeNet-SSD
     // squeezenet_ssd_voc_deploy.prototxt
@@ -51,17 +44,17 @@ static int detect_squeezenet(const cv::Mat& bgr, std::vector<Object>& objects)
     int img_w = bgr.cols;
     int img_h = bgr.rows;
 
-    ncnn::Mat in = ncnn::Mat::from_pixels_resize(bgr.data, ncnn::Mat::PIXEL_BGR, bgr.cols, bgr.rows, target_size, target_size);
+    Mat in = Mat::from_pixels_resize(bgr.data, Mat::PIXEL_BGR, bgr.cols, bgr.rows, target_size, target_size);
 
     const float mean_vals[3] = {104.f, 117.f, 123.f};
     in.substract_mean_normalize(mean_vals, 0);
 
-    ncnn::Extractor ex = squeezenet.create_extractor();
+    Extractor ex = create_extractor(&squeezenet);
     ex.set_num_threads(4);
 
     ex.input("data", in);
 
-    ncnn::Mat out;
+    Mat out;
     ex.extract("detection_out",out);
 
 //     printf("%d %d %d\n", out.w, out.h, out.c);
@@ -146,16 +139,8 @@ int main(int argc, char** argv)
         return -1;
     }
 
-#if NCNN_VULKAN
-    ncnn::create_gpu_instance();
-#endif // NCNN_VULKAN
-
     std::vector<Object> objects;
     detect_squeezenet(m, objects);
-
-#if NCNN_VULKAN
-    ncnn::destroy_gpu_instance();
-#endif // NCNN_VULKAN
 
     draw_objects(m, objects);
 

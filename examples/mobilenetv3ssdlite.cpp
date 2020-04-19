@@ -20,9 +20,6 @@
 
 #include "platform.h"
 #include "net.h"
-#if NCNN_VULKAN
-#include "gpu.h"
-#endif // NCNN_VULKAN
 
 template<class T>
 const T& clamp(const T&v, const T& lo, const T& hi)
@@ -40,11 +37,7 @@ struct Object
 
 static int detect_mobilenetv3(const cv::Mat& bgr, std::vector<Object>& objects)
 {
-    ncnn::Net mobilenetv3;
-
-#if NCNN_VULKAN
-    mobilenetv3.opt.use_vulkan_compute = true;
-#endif // NCNN_VULKAN
+    Net mobilenetv3;
 
     // converted ncnn model from https://github.com/ujsyehao/mobilenetv3-ssd
     mobilenetv3.load_param("./mobilenetv3_ssdlite_voc.param");
@@ -55,19 +48,19 @@ static int detect_mobilenetv3(const cv::Mat& bgr, std::vector<Object>& objects)
     int img_w = bgr.cols;
     int img_h = bgr.rows;
 
-    ncnn::Mat in = ncnn::Mat::from_pixels_resize(bgr.data, ncnn::Mat::PIXEL_BGR2RGB, bgr.cols, bgr.rows, target_size, target_size);
+    Mat in = Mat::from_pixels_resize(bgr.data, Mat::PIXEL_BGR2RGB, bgr.cols, bgr.rows, target_size, target_size);
 
     const float mean_vals[3] = {123.675f, 116.28f, 103.53f};
     const float norm_vals[3] = {1.0f, 1.0f, 1.0f};
     in.substract_mean_normalize(mean_vals, norm_vals);
 
-    ncnn::Extractor ex = mobilenetv3.create_extractor();
+    Extractor ex = create_extractor(&mobilenetv3);
     ex.set_light_mode(true);
     ex.set_num_threads(4);
 
     ex.input("input", in);
 
-    ncnn::Mat out;
+    Mat out;
     ex.extract("detection_out",out);
 
 //     printf("%d %d %d\n", out.w, out.h, out.c);
@@ -161,16 +154,8 @@ int main(int argc, char** argv)
         return -1;
     }
 
-#if NCNN_VULKAN
-    ncnn::create_gpu_instance();
-#endif // NCNN_VULKAN
-
     std::vector<Object> objects;
     detect_mobilenetv3(m, objects);
-
-#if NCNN_VULKAN
-    ncnn::destroy_gpu_instance();
-#endif // NCNN_VULKAN
 
     draw_objects(m, objects);
 

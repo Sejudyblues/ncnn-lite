@@ -20,9 +20,6 @@
 
 #include "platform.h"
 #include "net.h"
-#if NCNN_VULKAN
-#include "gpu.h"
-#endif // NCNN_VULKAN
 
 struct Object
 {
@@ -33,11 +30,7 @@ struct Object
 
 static int detect_yolov2(const cv::Mat& bgr, std::vector<Object>& objects)
 {
-    ncnn::Net yolov2;
-
-#if NCNN_VULKAN
-    yolov2.opt.use_vulkan_compute = true;
-#endif // NCNN_VULKAN
+    Net yolov2;
 
     // original pretrained model from https://github.com/eric612/MobileNet-YOLO
     // https://github.com/eric612/MobileNet-YOLO/blob/master/models/yolov2/mobilenet_yolo_deploy.prototxt
@@ -51,7 +44,7 @@ static int detect_yolov2(const cv::Mat& bgr, std::vector<Object>& objects)
     int img_w = bgr.cols;
     int img_h = bgr.rows;
 
-    ncnn::Mat in = ncnn::Mat::from_pixels_resize(bgr.data, ncnn::Mat::PIXEL_BGR, bgr.cols, bgr.rows, target_size, target_size);
+    Mat in = Mat::from_pixels_resize(bgr.data, Mat::PIXEL_BGR, bgr.cols, bgr.rows, target_size, target_size);
 
     // the Caffe-YOLOv2-Windows style
     // X' = X * scale - mean
@@ -60,12 +53,12 @@ static int detect_yolov2(const cv::Mat& bgr, std::vector<Object>& objects)
     in.substract_mean_normalize(0, norm_vals);
     in.substract_mean_normalize(mean_vals, 0);
 
-    ncnn::Extractor ex = yolov2.create_extractor();
+    Extractor ex = create_extractor(&yolov2);
     ex.set_num_threads(4);
 
     ex.input("data", in);
 
-    ncnn::Mat out;
+    Mat out;
     ex.extract("detection_out", out);
 
 //     printf("%d %d %d\n", out.w, out.h, out.c);
@@ -150,16 +143,8 @@ int main(int argc, char** argv)
         return -1;
     }
 
-#if NCNN_VULKAN
-    ncnn::create_gpu_instance();
-#endif // NCNN_VULKAN
-
     std::vector<Object> objects;
     detect_yolov2(m, objects);
-
-#if NCNN_VULKAN
-    ncnn::destroy_gpu_instance();
-#endif // NCNN_VULKAN
 
     draw_objects(m, objects);
 

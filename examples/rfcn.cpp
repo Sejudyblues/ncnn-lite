@@ -20,9 +20,6 @@
 
 #include "platform.h"
 #include "net.h"
-#if NCNN_VULKAN
-#include "gpu.h"
-#endif // NCNN_VULKAN
 
 struct Object
 {
@@ -118,11 +115,7 @@ static void nms_sorted_bboxes(const std::vector<Object>& objects, std::vector<in
 
 static int detect_rfcn(const cv::Mat& bgr, std::vector<Object>& objects)
 {
-    ncnn::Net rfcn;
-
-#if NCNN_VULKAN
-    rfcn.opt.use_vulkan_compute = true;
-#endif // NCNN_VULKAN
+    Net rfcn;
 
     // original pretrained model from https://github.com/YuwenXiong/py-R-FCN
     // https://github.com/YuwenXiong/py-R-FCN/blob/master/models/pascal_voc/ResNet-50/rfcn_end2end/test_agnostic.prototxt
@@ -155,25 +148,25 @@ static int detect_rfcn(const cv::Mat& bgr, std::vector<Object>& objects)
         w = w * scale;
     }
 
-    ncnn::Mat in = ncnn::Mat::from_pixels_resize(bgr.data, ncnn::Mat::PIXEL_BGR, bgr.cols, bgr.rows, w, h);
+    Mat in = Mat::from_pixels_resize(bgr.data, Mat::PIXEL_BGR, bgr.cols, bgr.rows, w, h);
 
     const float mean_vals[3] = { 102.9801f, 115.9465f, 122.7717f };
     in.substract_mean_normalize(mean_vals, 0);
 
-    ncnn::Mat im_info(3);
+    Mat im_info(3);
     im_info[0] = h;
     im_info[1] = w;
     im_info[2] = scale;
 
     // step1, extract feature and all rois
-    ncnn::Extractor ex1 = rfcn.create_extractor();
+    Extractor ex1 = create_extractor(&rfcn);
 
     ex1.input("data", in);
     ex1.input("im_info", im_info);
 
-    ncnn::Mat rfcn_cls;
-    ncnn::Mat rfcn_bbox;
-    ncnn::Mat rois;// all rois
+    Mat rfcn_cls;
+    Mat rfcn_bbox;
+    Mat rois;// all rois
     ex1.extract("rfcn_cls", rfcn_cls);
     ex1.extract("rfcn_bbox", rfcn_bbox);
     ex1.extract("rois", rois);
@@ -182,15 +175,15 @@ static int detect_rfcn(const cv::Mat& bgr, std::vector<Object>& objects)
     std::vector< std::vector<Object> > class_candidates;
     for (int i = 0; i < rois.c; i++)
     {
-        ncnn::Extractor ex2 = rfcn.create_extractor();
+        Extractor ex2 = create_extractor(&rfcn);
 
-        ncnn::Mat roi = rois.channel(i);// get single roi
+        Mat roi = rois.channel(i);// get single roi
         ex2.input("rfcn_cls", rfcn_cls);
         ex2.input("rfcn_bbox", rfcn_bbox);
         ex2.input("rois", roi);
 
-        ncnn::Mat bbox_pred;
-        ncnn::Mat cls_prob;
+        Mat bbox_pred;
+        Mat cls_prob;
         ex2.extract("bbox_pred", bbox_pred);
         ex2.extract("cls_prob", cls_prob);
 
@@ -350,16 +343,8 @@ int main(int argc, char** argv)
         return -1;
     }
 
-#if NCNN_VULKAN
-    ncnn::create_gpu_instance();
-#endif // NCNN_VULKAN
-
     std::vector<Object> objects;
     detect_rfcn(m, objects);
-
-#if NCNN_VULKAN
-    ncnn::destroy_gpu_instance();
-#endif // NCNN_VULKAN
 
     draw_objects(m, objects);
 

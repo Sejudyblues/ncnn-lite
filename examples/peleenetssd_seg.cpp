@@ -20,9 +20,6 @@
 
 #include "platform.h"
 #include "net.h"
-#if NCNN_VULKAN
-#include "gpu.h"
-#endif // NCNN_VULKAN
 
 struct Object
 {
@@ -31,13 +28,9 @@ struct Object
     float prob;
 };
 
-static int detect_peleenet(const cv::Mat& bgr, std::vector<Object>& objects,ncnn::Mat &resized)
+static int detect_peleenet(const cv::Mat& bgr, std::vector<Object>& objects,Mat &resized)
 {
-    ncnn::Net peleenet;
-
-#if NCNN_VULKAN
-    peleenet.opt.use_vulkan_compute = true;
-#endif // NCNN_VULKAN
+    Net peleenet;
 
     // model is converted from https://github.com/eric612/MobileNet-YOLO
     // and can be downloaded from https://drive.google.com/open?id=1Wt6jKv13sBRMHgrGAJYlOlRF-o80pC0g
@@ -50,18 +43,18 @@ static int detect_peleenet(const cv::Mat& bgr, std::vector<Object>& objects,ncnn
     int img_w = bgr.cols;
     int img_h = bgr.rows;
 
-    ncnn::Mat in = ncnn::Mat::from_pixels_resize(bgr.data, ncnn::Mat::PIXEL_BGR, bgr.cols, bgr.rows, target_size, target_size);
+    Mat in = Mat::from_pixels_resize(bgr.data, Mat::PIXEL_BGR, bgr.cols, bgr.rows, target_size, target_size);
 
     const float mean_vals[3] = {103.9f, 116.7f, 123.6f};
     const float norm_vals[3] = {0.017f,0.017f,0.017f};
     in.substract_mean_normalize(mean_vals, norm_vals);
 
-    ncnn::Extractor ex = peleenet.create_extractor();
+    Extractor ex = create_extractor(&peleenet);
 //     ex.set_num_threads(4);
 
     ex.input("data", in);
 
-    ncnn::Mat out;
+    Mat out;
     ex.extract("detection_out",out);
 
 //     printf("%d %d %d\n", out.w, out.h, out.c);
@@ -80,14 +73,14 @@ static int detect_peleenet(const cv::Mat& bgr, std::vector<Object>& objects,ncnn
 
         objects.push_back(object);
     }
-    ncnn::Mat seg_out;
+    Mat seg_out;
     ex.extract("sigmoid",seg_out);
     resize_bilinear(seg_out,resized,img_w,img_h);
     //resize_bicubic(seg_out,resized,img_w,img_h); // sharpness
     return 0;
 }
 
-static void draw_objects(const cv::Mat& bgr, const std::vector<Object>& objects,ncnn::Mat map)
+static void draw_objects(const cv::Mat& bgr, const std::vector<Object>& objects,Mat map)
 {
     static const char* class_names[] = {"background",
         "person","rider", "car","bus",
@@ -184,17 +177,9 @@ int main(int argc, char** argv)
         return -1;
     }
 
-#if NCNN_VULKAN
-    ncnn::create_gpu_instance();
-#endif // NCNN_VULKAN
-
     std::vector<Object> objects;
-    ncnn::Mat seg_out;
+    Mat seg_out;
     detect_peleenet(m, objects, seg_out);
-
-#if NCNN_VULKAN
-    ncnn::destroy_gpu_instance();
-#endif // NCNN_VULKAN
 
     draw_objects(m, objects, seg_out);
 

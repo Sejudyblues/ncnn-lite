@@ -25,7 +25,6 @@
 #endif  // CV_VERSION_MAJOR >= 4
 
 #include "net.h"
-#include "gpu.h"
 
 struct KeyPoint
 {
@@ -35,11 +34,7 @@ struct KeyPoint
 
 static int detect_posenet(const cv::Mat& bgr, std::vector<KeyPoint>& keypoints)
 {
-    ncnn::Net posenet;
-
-#if NCNN_VULKAN
-    posenet.opt.use_vulkan_compute = true;
-#endif // NCNN_VULKAN
+    Net posenet;
 
     // the simple baseline human pose estimation from gluon-cv
     // https://gluon-cv.mxnet.io/build/examples_pose/demo_simple_pose.html
@@ -54,7 +49,7 @@ static int detect_posenet(const cv::Mat& bgr, std::vector<KeyPoint>& keypoints)
     int w = bgr.cols;
     int h = bgr.rows;
 
-    ncnn::Mat in = ncnn::Mat::from_pixels_resize(bgr.data, ncnn::Mat::PIXEL_BGR2RGB, w, h, 192, 256);
+    Mat in = Mat::from_pixels_resize(bgr.data, Mat::PIXEL_BGR2RGB, w, h, 192, 256);
 
     // transforms.ToTensor(),
     // transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
@@ -65,18 +60,18 @@ static int detect_posenet(const cv::Mat& bgr, std::vector<KeyPoint>& keypoints)
     const float norm_vals[3] = {1/0.229f/255.f, 1/0.224f/255.f, 1/0.225f/255.f};
     in.substract_mean_normalize(mean_vals, norm_vals);
 
-    ncnn::Extractor ex = posenet.create_extractor();
+    Extractor ex = create_extractor(&posenet);
 
     ex.input("data", in);
 
-    ncnn::Mat out;
+    Mat out;
     ex.extract("conv3_fwd", out);
 
     // resolve point from heatmap
     keypoints.clear();
     for (int p = 0; p < out.c; p++)
     {
-        const ncnn::Mat m = out.channel(p);
+        const Mat m = out.channel(p);
 
         float max_prob = 0.f;
         int max_x = 0;
@@ -157,18 +152,10 @@ int main(int argc, char** argv)
         return -1;
     }
 
-#if NCNN_VULKAN
-    ncnn::create_gpu_instance();
-#endif // NCNN_VULKAN
-
     std::vector<KeyPoint> keypoints;
     detect_posenet(m, keypoints);
 
     draw_pose(m, keypoints);
-
-#if NCNN_VULKAN
-    ncnn::destroy_gpu_instance();
-#endif // NCNN_VULKAN
 
     return 0;
 }

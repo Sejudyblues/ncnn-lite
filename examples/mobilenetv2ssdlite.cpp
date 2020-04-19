@@ -20,11 +20,8 @@
 
 #include "platform.h"
 #include "net.h"
-#if NCNN_VULKAN
-#include "gpu.h"
-#endif // NCNN_VULKAN
 
-class Noop : public ncnn::Layer {};
+class Noop : public Layer {};
 DEFINE_LAYER_CREATOR(Noop)
 
 struct Object
@@ -36,11 +33,7 @@ struct Object
 
 static int detect_mobilenetv2(const cv::Mat& bgr, std::vector<Object>& objects)
 {
-    ncnn::Net mobilenetv2;
-
-#if NCNN_VULKAN
-    mobilenetv2.opt.use_vulkan_compute = true;
-#endif // NCNN_VULKAN
+    Net mobilenetv2;
 
     mobilenetv2.register_custom_layer("Silence", Noop_layer_creator);
 
@@ -55,19 +48,19 @@ static int detect_mobilenetv2(const cv::Mat& bgr, std::vector<Object>& objects)
     int img_w = bgr.cols;
     int img_h = bgr.rows;
 
-    ncnn::Mat in = ncnn::Mat::from_pixels_resize(bgr.data, ncnn::Mat::PIXEL_BGR, bgr.cols, bgr.rows, target_size, target_size);
+    Mat in = Mat::from_pixels_resize(bgr.data, Mat::PIXEL_BGR, bgr.cols, bgr.rows, target_size, target_size);
 
     const float mean_vals[3] = {127.5f, 127.5f, 127.5f};
     const float norm_vals[3] = {1.0/127.5,1.0/127.5,1.0/127.5};
     in.substract_mean_normalize(mean_vals, norm_vals);
 
-    ncnn::Extractor ex = mobilenetv2.create_extractor();
+    Extractor ex = create_extractor(&mobilenetv2);
     ex.set_light_mode(true);
     ex.set_num_threads(4);
 
     ex.input("data", in);
 
-    ncnn::Mat out;
+    Mat out;
     ex.extract("detection_out",out);
 
 //     printf("%d %d %d\n", out.w, out.h, out.c);
@@ -152,16 +145,8 @@ int main(int argc, char** argv)
         return -1;
     }
 
-#if NCNN_VULKAN
-    ncnn::create_gpu_instance();
-#endif // NCNN_VULKAN
-
     std::vector<Object> objects;
     detect_mobilenetv2(m, objects);
-
-#if NCNN_VULKAN
-    ncnn::destroy_gpu_instance();
-#endif // NCNN_VULKAN
 
     draw_objects(m, objects);
 

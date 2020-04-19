@@ -20,9 +20,6 @@
 
 #include "platform.h"
 #include "net.h"
-#if NCNN_VULKAN
-#include "gpu.h"
-#endif // NCNN_VULKAN
 
 struct FaceObject
 {
@@ -117,12 +114,12 @@ static void nms_sorted_bboxes(const std::vector<FaceObject>& faceobjects, std::v
 }
 
 // copy from src/layer/proposal.cpp
-static ncnn::Mat generate_anchors(int base_size, const ncnn::Mat& ratios, const ncnn::Mat& scales)
+static Mat generate_anchors(int base_size, const Mat& ratios, const Mat& scales)
 {
     int num_ratio = ratios.w;
     int num_scale = scales.w;
 
-    ncnn::Mat anchors;
+    Mat anchors;
     anchors.create(4, num_ratio * num_scale);
 
     const float cx = base_size * 0.5f;
@@ -154,7 +151,7 @@ static ncnn::Mat generate_anchors(int base_size, const ncnn::Mat& ratios, const 
     return anchors;
 }
 
-static void generate_proposals(const ncnn::Mat& anchors, int feat_stride, const ncnn::Mat& score_blob, const ncnn::Mat& bbox_blob, const ncnn::Mat& landmark_blob, float prob_threshold, std::vector<FaceObject>& faceobjects)
+static void generate_proposals(const Mat& anchors, int feat_stride, const Mat& score_blob, const Mat& bbox_blob, const Mat& landmark_blob, float prob_threshold, std::vector<FaceObject>& faceobjects)
 {
     int w = score_blob.w;
     int h = score_blob.h;
@@ -166,9 +163,9 @@ static void generate_proposals(const ncnn::Mat& anchors, int feat_stride, const 
     {
         const float* anchor = anchors.row(q);
 
-        const ncnn::Mat score = score_blob.channel(q + num_anchors);
-        const ncnn::Mat bbox = bbox_blob.channel_range(q * 4, 4);
-        const ncnn::Mat landmark = landmark_blob.channel_range(q * 10, 10);
+        const Mat score = score_blob.channel(q + num_anchors);
+        const Mat bbox = bbox_blob.channel_range(q * 4, 4);
+        const Mat landmark = landmark_blob.channel_range(q * 10, 10);
 
         // shifted anchor
         float anchor_y = anchor[1];
@@ -239,11 +236,7 @@ static void generate_proposals(const ncnn::Mat& anchors, int feat_stride, const 
 
 static int detect_retinaface(const cv::Mat& bgr, std::vector<FaceObject>& faceobjects)
 {
-    ncnn::Net retinaface;
-
-#if NCNN_VULKAN
-    retinaface.opt.use_vulkan_compute = true;
-#endif // NCNN_VULKAN
+    Net retinaface;
 
     // model is converted from
     // https://github.com/deepinsight/insightface/tree/master/RetinaFace#retinaface-pretrained-models
@@ -260,9 +253,9 @@ static int detect_retinaface(const cv::Mat& bgr, std::vector<FaceObject>& faceob
     int img_w = bgr.cols;
     int img_h = bgr.rows;
 
-    ncnn::Mat in = ncnn::Mat::from_pixels(bgr.data, ncnn::Mat::PIXEL_BGR2RGB, img_w, img_h);
+    Mat in = Mat::from_pixels(bgr.data, Mat::PIXEL_BGR2RGB, img_w, img_h);
 
-    ncnn::Extractor ex = retinaface.create_extractor();
+    Extractor ex = create_extractor(&retinaface);
 
     ex.input("data", in);
 
@@ -270,19 +263,19 @@ static int detect_retinaface(const cv::Mat& bgr, std::vector<FaceObject>& faceob
 
     // stride 32
     {
-        ncnn::Mat score_blob, bbox_blob, landmark_blob;
+        Mat score_blob, bbox_blob, landmark_blob;
         ex.extract("face_rpn_cls_prob_reshape_stride32", score_blob);
         ex.extract("face_rpn_bbox_pred_stride32", bbox_blob);
         ex.extract("face_rpn_landmark_pred_stride32", landmark_blob);
 
         const int base_size = 16;
         const int feat_stride = 32;
-        ncnn::Mat ratios(1);
+        Mat ratios(1);
         ratios[0] = 1.f;
-        ncnn::Mat scales(2);
+        Mat scales(2);
         scales[0] = 32.f;
         scales[1] = 16.f;
-        ncnn::Mat anchors = generate_anchors(base_size, ratios, scales);
+        Mat anchors = generate_anchors(base_size, ratios, scales);
 
         std::vector<FaceObject> faceobjects32;
         generate_proposals(anchors, feat_stride, score_blob, bbox_blob, landmark_blob, prob_threshold, faceobjects32);
@@ -292,19 +285,19 @@ static int detect_retinaface(const cv::Mat& bgr, std::vector<FaceObject>& faceob
 
     // stride 16
     {
-        ncnn::Mat score_blob, bbox_blob, landmark_blob;
+        Mat score_blob, bbox_blob, landmark_blob;
         ex.extract("face_rpn_cls_prob_reshape_stride16", score_blob);
         ex.extract("face_rpn_bbox_pred_stride16", bbox_blob);
         ex.extract("face_rpn_landmark_pred_stride16", landmark_blob);
 
         const int base_size = 16;
         const int feat_stride = 16;
-        ncnn::Mat ratios(1);
+        Mat ratios(1);
         ratios[0] = 1.f;
-        ncnn::Mat scales(2);
+        Mat scales(2);
         scales[0] = 8.f;
         scales[1] = 4.f;
-        ncnn::Mat anchors = generate_anchors(base_size, ratios, scales);
+        Mat anchors = generate_anchors(base_size, ratios, scales);
 
         std::vector<FaceObject> faceobjects16;
         generate_proposals(anchors, feat_stride, score_blob, bbox_blob, landmark_blob, prob_threshold, faceobjects16);
@@ -314,19 +307,19 @@ static int detect_retinaface(const cv::Mat& bgr, std::vector<FaceObject>& faceob
 
     // stride 8
     {
-        ncnn::Mat score_blob, bbox_blob, landmark_blob;
+        Mat score_blob, bbox_blob, landmark_blob;
         ex.extract("face_rpn_cls_prob_reshape_stride8", score_blob);
         ex.extract("face_rpn_bbox_pred_stride8", bbox_blob);
         ex.extract("face_rpn_landmark_pred_stride8", landmark_blob);
 
         const int base_size = 16;
         const int feat_stride = 8;
-        ncnn::Mat ratios(1);
+        Mat ratios(1);
         ratios[0] = 1.f;
-        ncnn::Mat scales(2);
+        Mat scales(2);
         scales[0] = 2.f;
         scales[1] = 1.f;
-        ncnn::Mat anchors = generate_anchors(base_size, ratios, scales);
+        Mat anchors = generate_anchors(base_size, ratios, scales);
 
         std::vector<FaceObject> faceobjects8;
         generate_proposals(anchors, feat_stride, score_blob, bbox_blob, landmark_blob, prob_threshold, faceobjects8);
@@ -429,16 +422,8 @@ int main(int argc, char** argv)
         return -1;
     }
 
-#if NCNN_VULKAN
-    ncnn::create_gpu_instance();
-#endif // NCNN_VULKAN
-
     std::vector<FaceObject> faceobjects;
     detect_retinaface(m, faceobjects);
-
-#if NCNN_VULKAN
-    ncnn::destroy_gpu_instance();
-#endif // NCNN_VULKAN
 
     draw_faceobjects(m, faceobjects);
 

@@ -20,9 +20,6 @@
 
 #include "platform.h"
 #include "net.h"
-#if NCNN_VULKAN
-#include "gpu.h"
-#endif // NCNN_VULKAN
 
 struct Object
 {
@@ -120,11 +117,7 @@ static void nms_sorted_bboxes(const std::vector<Object>& objects, std::vector<in
 
 static int detect_yolact(const cv::Mat& bgr, std::vector<Object>& objects)
 {
-    ncnn::Net yolact;
-
-#if NCNN_VULKAN
-    yolact.opt.use_vulkan_compute = true;
-#endif // NCNN_VULKAN
+    Net yolact;
 
     // original model converted from https://github.com/dbolya/yolact
     // yolact_resnet50_54_800000.pth
@@ -137,21 +130,21 @@ static int detect_yolact(const cv::Mat& bgr, std::vector<Object>& objects)
     int img_w = bgr.cols;
     int img_h = bgr.rows;
 
-    ncnn::Mat in = ncnn::Mat::from_pixels_resize(bgr.data, ncnn::Mat::PIXEL_BGR2RGB, img_w, img_h, target_size, target_size);
+    Mat in = Mat::from_pixels_resize(bgr.data, Mat::PIXEL_BGR2RGB, img_w, img_h, target_size, target_size);
 
     const float mean_vals[3] = {123.68f, 116.78f, 103.94f};
     const float norm_vals[3] = {1.0/58.40f, 1.0/57.12f, 1.0/57.38f};
     in.substract_mean_normalize(mean_vals, norm_vals);
 
-    ncnn::Extractor ex = yolact.create_extractor();
+    Extractor ex = create_extractor(&yolact);
 //     ex.set_num_threads(4);
 
     ex.input("input.1", in);
 
-    ncnn::Mat maskmaps;
-    ncnn::Mat location;
-    ncnn::Mat mask;
-    ncnn::Mat confidence;
+    Mat maskmaps;
+    Mat location;
+    Mat mask;
+    Mat confidence;
 
     ex.extract("619", maskmaps);// 138x138 x 32
 
@@ -163,7 +156,7 @@ static int detect_yolact(const cv::Mat& bgr, std::vector<Object>& objects)
     int num_priors = confidence.h;
 
     // make priorbox
-    ncnn::Mat priorbox(4, num_priors);
+    Mat priorbox(4, num_priors);
     {
         const int conv_ws[5] = {69, 35, 18, 9, 5};
         const int conv_hs[5] = {69, 35, 18, 9, 5};
@@ -475,16 +468,8 @@ int main(int argc, char** argv)
         return -1;
     }
 
-#if NCNN_VULKAN
-    ncnn::create_gpu_instance();
-#endif // NCNN_VULKAN
-
     std::vector<Object> objects;
     detect_yolact(m, objects);
-
-#if NCNN_VULKAN
-    ncnn::destroy_gpu_instance();
-#endif // NCNN_VULKAN
 
     draw_objects(m, objects);
 

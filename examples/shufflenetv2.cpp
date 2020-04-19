@@ -20,47 +20,40 @@
 
 #include "platform.h"
 #include "net.h"
-#if NCNN_VULKAN
-#include "gpu.h"
-#endif // NCNN_VULKAN
 
 static int detect_shufflenetv2(const cv::Mat& bgr, std::vector<float>& cls_scores)
 {
-    ncnn::Net shufflenetv2;
-
-#if NCNN_VULKAN
-    shufflenetv2.opt.use_vulkan_compute = true;
-#endif // NCNN_VULKAN
+    Net shufflenetv2;
 
     // https://github.com/miaow1988/ShuffleNet_V2_pytorch_caffe
     // models can be downloaded from https://github.com/miaow1988/ShuffleNet_V2_pytorch_caffe/releases
     shufflenetv2.load_param("shufflenet_v2_x0.5.param");
     shufflenetv2.load_model("shufflenet_v2_x0.5.bin");
 
-    ncnn::Mat in = ncnn::Mat::from_pixels_resize(bgr.data, ncnn::Mat::PIXEL_BGR, bgr.cols, bgr.rows, 224, 224);
+    Mat in = Mat::from_pixels_resize(bgr.data, Mat::PIXEL_BGR, bgr.cols, bgr.rows, 224, 224);
 
     const float norm_vals[3] = {1/255.f, 1/255.f, 1/255.f};
     in.substract_mean_normalize(0, norm_vals);
 
-    ncnn::Extractor ex = shufflenetv2.create_extractor();
+    Extractor ex = create_extractor(&shufflenetv2);
 
     ex.input("data", in);
 
-    ncnn::Mat out;
+    Mat out;
     ex.extract("fc", out);
 
     // manually call softmax on the fc output
     // convert result into probability
     // skip if your model already has softmax operation
     {
-        ncnn::Layer* softmax = ncnn::create_layer("Softmax");
+        Layer* softmax = create_layer("Softmax");
 
-        ncnn::ParamDict pd;
-        softmax->load_param(pd);
+        ParamDict pd;
+        softmax->load_param(softmax, pd);
 
-        softmax->forward_inplace(out, shufflenetv2.opt);
+        softmax->forward_inplace(softmax, out, shufflenetv2.opt);
 
-        delete softmax;
+        cdelete(softmax);
     }
 
     out = out.reshape(out.w * out.h * out.c);
@@ -116,16 +109,8 @@ int main(int argc, char** argv)
         return -1;
     }
 
-#if NCNN_VULKAN
-    ncnn::create_gpu_instance();
-#endif // NCNN_VULKAN
-
     std::vector<float> cls_scores;
     detect_shufflenetv2(m, cls_scores);
-
-#if NCNN_VULKAN
-    ncnn::destroy_gpu_instance();
-#endif // NCNN_VULKAN
 
     print_topk(cls_scores, 3);
 
