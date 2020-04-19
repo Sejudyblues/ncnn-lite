@@ -1085,6 +1085,7 @@ int Extractor::extract(int blob_index, Mat& feat)
     if (blob_mats[blob_index].dims == 0)
     {
         int layer_index = vector_get(net->blobs, blob_index).producer;
+        ret = net->forward_layer(layer_index, blob_mats, opt);
     }
 
     feat = blob_mats[blob_index];
