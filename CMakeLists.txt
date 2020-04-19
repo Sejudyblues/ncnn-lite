@@ -31,6 +31,7 @@ option(NCNN_REQUANT "auto merge int8 quant and dequant" OFF)
 option(NCNN_DISABLE_PIC "disable position-independent code" OFF)
 option(NCNN_BUILD_BENCHMARK "build benchmark" ON)
 option(NCNN_DISABLE_RTTI "disable rtti" ON)
+option(NCNN_BUILD_EXAMPLES "build examples" ON)
 
 ##############################################
 
@@ -41,4 +42,7 @@ set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "cmake")
 add_subdirectory(src)
 if(NCNN_BUILD_BENCHMARK)
     add_subdirectory(benchmark)
+endif()
+if(NCNN_BUILD_EXAMPLES)
+    add_subdirectory(examples)
 endif()
