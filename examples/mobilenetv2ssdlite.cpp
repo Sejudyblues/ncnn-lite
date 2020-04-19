@@ -21,8 +21,9 @@
 #include "platform.h"
 #include "net.h"
 
-class Noop : public Layer {};
-DEFINE_LAYER_CREATOR(Noop)
+// [TODO] Fix noop
+// class Noop : public Layer {};
+// DEFINE_LAYER_CREATOR(Noop)
 
 struct Object
 {
@@ -35,7 +36,8 @@ static int detect_mobilenetv2(const cv::Mat& bgr, std::vector<Object>& objects)
 {
     Net mobilenetv2;
 
-    mobilenetv2.register_custom_layer("Silence", Noop_layer_creator);
+    // [TODO] Fix noop
+    // mobilenetv2.register_custom_layer("Silence", Noop_layer_creator);
 
     // original pretrained model from https://github.com/chuanqi305/MobileNetv2-SSDLite
     // https://github.com/chuanqi305/MobileNetv2-SSDLite/blob/master/ssdlite/voc/deploy.prototxt
