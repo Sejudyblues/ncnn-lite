@@ -24,10 +24,12 @@
 #ifndef __GENERIC_DEFS_H__
 #define __GENERIC_DEFS_H__
 
+#include <stdint.h>
+
 /* Generic unsigned int definitions */
-typedef unsigned char       uint8;            /* 8 bits, 1 byte */
-typedef unsigned short      uint16;           /* 16 bits, 2 bytes */
-typedef unsigned int        uint32;           /* 32 bits, 4 bytes */
-typedef unsigned long long  uint64;           /* 64 bits, 8 bytes */
+typedef uint8_t     uint8;          /* 8 bits, 1 byte */
+typedef uint16_t    uint16;         /* 16 bits, 2 bytes */
+typedef uint32_t    uint32;         /* 32 bits, 4 bytes */
+typedef uint64_t    uint64;         /* 64 bits, 8 bytes */
 
 #endif /* __GENERIC_DEFS_H__ */
