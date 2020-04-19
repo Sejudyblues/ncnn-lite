@@ -142,7 +142,7 @@ set(__LAYER_TYPE_ENUM_INDEX 0)
 ncnn_add_layer(AbsVal)
 ncnn_add_layer(ArgMax OFF)
 ncnn_add_layer(BatchNorm OFF) # TODO
-ncnn_add_layer(Bias OFF) # TODO
+ncnn_add_layer(Bias)
 ncnn_add_layer(BNLL OFF) # TODO
 ncnn_add_layer(Concat)
 ncnn_add_layer(Convolution)

@@ -14,32 +14,40 @@
 
 #include "bias.h"
 
-DEFINE_LAYER_CREATOR(Bias)
-
-Bias::Bias()
+void *Bias_ctor(void *_self, va_list *args)
 {
-    one_blob_only = true;
-    support_inplace = true;
+    Layer *self = (Layer *)_self;
+
+    self->one_blob_only = true;
+    self->support_inplace = true;
+
+    return _self;
 }
 
-int Bias::load_param(const ParamDict& pd)
+int Bias_load_param(void *_self, const ParamDict& pd)
 {
-    bias_data_size = pd.get(0, 0);
+    Bias *self = (Bias *)_self;
+
+    self->bias_data_size = pd.get(0, 0);
 
     return 0;
 }
 
-int Bias::load_model(const ModelBin& mb)
+int Bias_load_model(void *_self, const ModelBin& mb)
 {
-    bias_data = mb.load(bias_data_size, 1);
-    if (bias_data.empty())
+    Bias *self = (Bias *)_self;
+
+    self->bias_data = mb.load(self->bias_data_size, 1);
+    if (self->bias_data.empty())
         return -100;
 
     return 0;
 }
 
-int Bias::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
+int Bias_forward_inplace(void *_self, Mat& bottom_top_blob, const Option& opt)
 {
+    Bias *self = (Bias *)_self;
+
     int w = bottom_top_blob.w;
     int h = bottom_top_blob.h;
     int channels = bottom_top_blob.c;
@@ -50,7 +58,7 @@ int Bias::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
     {
         float* ptr = bottom_top_blob.channel(q);
 
-        float bias = bias_data[q];
+        float bias = self->bias_data[q];
 
         for (int i=0; i<size; i++)
         {

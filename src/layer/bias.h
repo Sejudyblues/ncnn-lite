@@ -17,21 +17,33 @@
 
 #include "layer.h"
 
-struct Bias : public Layer
+struct Bias
 {
-    Bias();
+    // layer base
+    Layer layer;
 
-    virtual int load_param(const ParamDict& pd);
-
-    virtual int load_model(const ModelBin& mb);
-
-    virtual int forward_inplace(Mat& bottom_top_blob, const Option& opt) const;
-
+    // proprietary data
     // param
     int bias_data_size;
 
     // model
     Mat bias_data;
 };
+
+void *Bias_ctor(void *_self, va_list *args);
+
+int Bias_load_param(void *_self, const ParamDict& pd);
+
+int Bias_load_model(void *_self, const ModelBin& mb);
+
+int Bias_forward_inplace(void *_self, Mat& bottom_top_blob, const Option& opt);
+
+// default operators
+#define Bias_dtor                     Layer_dtor
+#define Bias_create_pipeline          Layer_create_pipeline
+#define Bias_destroy_pipeline         Layer_destroy_pipeline
+#define Bias_forward_multi            Layer_forward_multi
+#define Bias_forward                  Layer_forward
+#define Bias_forward_inplace_multi    Layer_forward_inplace_multi
 
 #endif // LAYER_BIAS_H
