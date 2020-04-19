@@ -26,7 +26,7 @@ void *Split_ctor(void *_self, va_list *args)
     return _self;
 }
 
-int Split_forward(void *_self, const std::vector<Mat>& bottom_blobs, std::vector<Mat>& top_blobs, const Option& opt)
+int Split_forward_multi(void *_self, const std::vector<Mat>& bottom_blobs, std::vector<Mat>& top_blobs, const Option& opt)
 {
     const Mat& bottom_blob = bottom_blobs[0];
     for (size_t i=0; i<top_blobs.size(); i++)

@@ -34,7 +34,7 @@ int Concat_load_param(void *_self, const ParamDict& pd)
     return 0;
 }
 
-int Concat_forward(void *_self, const std::vector<Mat>& bottom_blobs, std::vector<Mat>& top_blobs, const Option& opt)
+int Concat_forward_multi(void *_self, const std::vector<Mat>& bottom_blobs, std::vector<Mat>& top_blobs, const Option& opt)
 {
     Concat *self = (Concat *)_self;
 
