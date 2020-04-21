@@ -27,10 +27,7 @@
 // Aligns a pointer to the specified number of bytes
 // ptr Aligned pointer
 // n Alignment size that must be a power of two
-template<typename _Tp> static inline _Tp* alignPtr(_Tp* ptr, int n=(int)sizeof(_Tp))
-{
-    return (_Tp*)(((size_t)ptr + n-1) & -n);
-}
+#define alignPtr(ptr, n)    (void *)(((size_t)(ptr) + n - 1) & -n)
 
 // Aligns a buffer size to the specified number of bytes
 // The function returns the minimum number that is greater or equal to sz and is divisible by n
@@ -87,9 +84,6 @@ static inline void nativeFree(void* ptr)
 #      define NCNN_XADD(addr, delta) (int)__sync_fetch_and_add((unsigned*)(addr), (unsigned)(delta))
 #    endif
 #  endif
-#elif defined _MSC_VER && !defined RC_INVOKED
-#  include <intrin.h>
-#  define NCNN_XADD(addr, delta) (int)_InterlockedExchangeAdd((long volatile*)addr, delta)
 #else
 // thread-unsafe branch
 static inline int NCNN_XADD(int* addr, int delta) { int tmp = *addr; *addr += delta; return tmp; }
