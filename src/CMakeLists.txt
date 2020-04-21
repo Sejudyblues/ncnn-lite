@@ -264,7 +264,7 @@ else()
     endif()
     # target_compile_options(ncnn PRIVATE -march=native)
     # set_target_properties(ncnn PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON)
-    target_compile_options(ncnn PRIVATE -fvisibility=hidden -fvisibility-inlines-hidden)
+    target_compile_options(ncnn PRIVATE -fvisibility=hidden)
 endif()
 
 if(ANDROID)
