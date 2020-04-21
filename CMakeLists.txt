@@ -30,7 +30,6 @@ option(NCNN_CMAKE_VERBOSE "print verbose cmake messages" OFF)
 option(NCNN_REQUANT "auto merge int8 quant and dequant" OFF)
 option(NCNN_DISABLE_PIC "disable position-independent code" OFF)
 option(NCNN_BUILD_BENCHMARK "build benchmark" ON)
-option(NCNN_DISABLE_RTTI "disable rtti" ON)
 option(NCNN_BUILD_EXAMPLES "build examples" ON)
 
 ##############################################
