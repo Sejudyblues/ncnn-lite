@@ -59,7 +59,7 @@ void PoolAllocator::clear()
     for (; it != budgets.end(); it++)
     {
         void* ptr = it->second;
-        fastFree(ptr);
+        nativeFree(ptr);
     }
     budgets.clear();
 
@@ -109,7 +109,7 @@ void* PoolAllocator::fastMalloc(size_t size)
     pthread_mutex_unlock(&budgets_lock);
 
     // new
-    void* ptr = fastMalloc(size);
+    void* ptr = nativeMalloc(size);
 
     pthread_mutex_lock(&payouts_lock);
 
@@ -149,7 +149,7 @@ void PoolAllocator::fastFree(void* ptr)
     pthread_mutex_unlock(&payouts_lock);
 
     fprintf(stderr, "FATAL ERROR! pool allocator get wild %p\n", ptr);
-    fastFree(ptr);
+    nativeFree(ptr);
 }
 
 UnlockedPoolAllocator::UnlockedPoolAllocator()
@@ -179,7 +179,7 @@ void UnlockedPoolAllocator::clear()
     for (; it != budgets.end(); it++)
     {
         void* ptr = it->second;
-        fastFree(ptr);
+        nativeFree(ptr);
     }
     budgets.clear();
 }
@@ -217,7 +217,7 @@ void* UnlockedPoolAllocator::fastMalloc(size_t size)
     }
 
     // new
-    void* ptr = fastMalloc(size);
+    void* ptr = nativeMalloc(size);
 
     payouts.push_back(std::make_pair(size, ptr));
 
@@ -243,5 +243,5 @@ void UnlockedPoolAllocator::fastFree(void* ptr)
     }
 
     fprintf(stderr, "FATAL ERROR! unlocked pool allocator get wild %p\n", ptr);
-    fastFree(ptr);
+    nativeFree(ptr);
 }

@@ -41,11 +41,9 @@ static inline size_t alignSize(size_t sz, int n)
     return (sz + n-1) & -n;
 }
 
-static inline void* fastMalloc(size_t size)
+static inline void* nativeMalloc(size_t size)
 {
-#if _MSC_VER
-    return _aligned_malloc(size, MALLOC_ALIGN);
-#elif _POSIX_C_SOURCE >= 200112L
+#if _POSIX_C_SOURCE >= 200112L
     void* ptr = 0;
     if (posix_memalign(&ptr, MALLOC_ALIGN, size))
         ptr = 0;
@@ -60,13 +58,11 @@ static inline void* fastMalloc(size_t size)
 #endif
 }
 
-static inline void fastFree(void* ptr)
+static inline void nativeFree(void* ptr)
 {
     if (ptr)
     {
-#if _MSC_VER
-        _aligned_free(ptr);
-#elif _POSIX_C_SOURCE >= 200112L
+#if _POSIX_C_SOURCE >= 200112L
         free(ptr);
 #else
         unsigned char* udata = ((unsigned char**)ptr)[-1];

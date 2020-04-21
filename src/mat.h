@@ -705,7 +705,7 @@ inline void Mat::create(int _w, size_t _elemsize, Allocator* _allocator)
         if (allocator)
             data = allocator->fastMalloc(totalsize + (int)sizeof(*refcount));
         else
-            data = fastMalloc(totalsize + (int)sizeof(*refcount));
+            data = nativeMalloc(totalsize + (int)sizeof(*refcount));
         refcount = (int*)(((unsigned char*)data) + totalsize);
         *refcount = 1;
     }
@@ -735,7 +735,7 @@ inline void Mat::create(int _w, int _h, size_t _elemsize, Allocator* _allocator)
         if (allocator)
             data = allocator->fastMalloc(totalsize + (int)sizeof(*refcount));
         else
-            data = fastMalloc(totalsize + (int)sizeof(*refcount));
+            data = nativeMalloc(totalsize + (int)sizeof(*refcount));
         refcount = (int*)(((unsigned char*)data) + totalsize);
         *refcount = 1;
     }
@@ -765,7 +765,7 @@ inline void Mat::create(int _w, int _h, int _c, size_t _elemsize, Allocator* _al
         if (allocator)
             data = allocator->fastMalloc(totalsize + (int)sizeof(*refcount));
         else
-            data = fastMalloc(totalsize + (int)sizeof(*refcount));
+            data = nativeMalloc(totalsize + (int)sizeof(*refcount));
         refcount = (int*)(((unsigned char*)data) + totalsize);
         *refcount = 1;
     }
@@ -795,7 +795,7 @@ inline void Mat::create(int _w, size_t _elemsize, int _elempack, Allocator* _all
         if (allocator)
             data = allocator->fastMalloc(totalsize + (int)sizeof(*refcount));
         else
-            data = fastMalloc(totalsize + (int)sizeof(*refcount));
+            data = nativeMalloc(totalsize + (int)sizeof(*refcount));
         refcount = (int*)(((unsigned char*)data) + totalsize);
         *refcount = 1;
     }
@@ -825,7 +825,7 @@ inline void Mat::create(int _w, int _h, size_t _elemsize, int _elempack, Allocat
         if (allocator)
             data = allocator->fastMalloc(totalsize + (int)sizeof(*refcount));
         else
-            data = fastMalloc(totalsize + (int)sizeof(*refcount));
+            data = nativeMalloc(totalsize + (int)sizeof(*refcount));
         refcount = (int*)(((unsigned char*)data) + totalsize);
         *refcount = 1;
     }
@@ -855,7 +855,7 @@ inline void Mat::create(int _w, int _h, int _c, size_t _elemsize, int _elempack,
         if (allocator)
             data = allocator->fastMalloc(totalsize + (int)sizeof(*refcount));
         else
-            data = fastMalloc(totalsize + (int)sizeof(*refcount));
+            data = nativeMalloc(totalsize + (int)sizeof(*refcount));
         refcount = (int*)(((unsigned char*)data) + totalsize);
         *refcount = 1;
     }
@@ -885,7 +885,7 @@ inline void Mat::release()
         if (allocator)
             allocator->fastFree(data);
         else
-            fastFree(data);
+            nativeFree(data);
     }
 
     data = 0;
